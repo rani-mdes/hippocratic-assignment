@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <title>Good Night, Earth</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='44' fill='%233B7DD8'/%3E%3Cpath d='M22 50 q10 -16 22 -8 q12 4 16 18 q-10 12 -22 8 q-12 -4 -16 -18 z' fill='%235DBE4D'/%3E%3C/svg%3E" />
+    <style>
+      :root {
+        /* Night-sky palette */
+        --sky-top: #0B1840;
+        --sky-mid: #1A1B5C;
+        --sky-bottom: #2D1F4F;
+        --hill: #1F1742;
+
+        /* Type & surfaces */
+        --text: #F4F2FF;
+        --text-muted: #B6AEDC;
+        --text-faint: #7A6FA6;
+        --surface: rgba(255, 255, 255, 0.06);
+        --surface-strong: rgba(255, 255, 255, 0.10);
+        --hairline: rgba(255, 255, 255, 0.10);
+        --hairline-strong: rgba(255, 255, 255, 0.22);
+
+        /* Accent */
+        --accent: #58CC02;
+        --accent-press: #4BAA02;
+        --accent-disabled: rgba(88, 204, 2, 0.35);
+
+        /* Theme accents (cards) */
+        --ocean: #2E6FB6;
+        --ocean-edge: #4A8FD9;
+        --forest: #3D7A3F;
+        --forest-edge: #5DA85F;
+        --atmosphere: #6B5BC9;
+        --atmosphere-edge: #8E7EE6;
+
+        /* Geometry */
+        --r-card: 22px;
+        --r-button: 999px;
+        --r-input: 14px;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { height: 100%; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Rounded",
+          "SF Pro Text", system-ui, "Helvetica Neue", Arial, sans-serif;
+        color: var(--text);
+        background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 50%, var(--sky-bottom) 100%);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Decorative star field */
+      .stars {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background-image:
+          radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,0.85), transparent 60%),
+          radial-gradient(1px 1px at 28% 62%, rgba(255,255,255,0.55), transparent 60%),
+          radial-gradient(1.5px 1.5px at 70% 12%, rgba(255,255,255,0.75), transparent 60%),
+          radial-gradient(1px 1px at 82% 48%, rgba(255,255,255,0.6), transparent 60%),
+          radial-gradient(1px 1px at 38% 88%, rgba(255,255,255,0.55), transparent 60%),
+          radial-gradient(1px 1px at 60% 80%, rgba(255,255,255,0.5), transparent 60%),
+          radial-gradient(2px 2px at 92% 22%, rgba(255,255,255,0.85), transparent 60%),
+          radial-gradient(1px 1px at 6% 78%, rgba(255,255,255,0.55), transparent 60%);
+      }
+      .hills {
+        position: fixed; left: 0; right: 0; bottom: 0; height: 18vh;
+        background: var(--hill);
+        clip-path: polygon(0 70%, 12% 60%, 25% 70%, 38% 55%, 52% 65%, 68% 50%, 82% 62%, 100% 55%, 100% 100%, 0 100%);
+        opacity: 0.55; pointer-events: none; z-index: 0;
+      }
+
+      /* App shell */
+      .app {
+        position: relative; z-index: 1;
+        max-width: 760px;
+        margin: 0 auto;
+        padding: 56px 32px 96px;
+        display: flex; flex-direction: column;
+        min-height: 100vh;
+      }
+      .brand {
+        display: flex; align-items: center; gap: 10px;
+        font-weight: 600; letter-spacing: -0.01em;
+        color: var(--text-muted);
+        opacity: 0.85;
+      }
+      .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+      /* Step container */
+      .step {
+        flex: 1;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        text-align: center;
+        gap: 28px;
+        animation: fade 360ms ease-out both;
+        margin-top: 32px;
+      }
+      .step[hidden] { display: none; }
+      @keyframes fade {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      /* Mascot */
+      .mascot { width: 168px; height: 168px; animation: float 4s ease-in-out infinite; }
+      @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50%     { transform: translateY(-8px); }
+      }
+
+      /* Typography */
+      h1.display {
+        font-size: 56px; line-height: 1.04; letter-spacing: -0.025em;
+        font-weight: 700; margin: 0;
+      }
+      h2.title {
+        font-size: 36px; line-height: 1.1; letter-spacing: -0.02em;
+        font-weight: 700; margin: 0;
+      }
+      h3.section {
+        font-size: 22px; line-height: 1.2; letter-spacing: -0.015em;
+        font-weight: 600; margin: 0;
+      }
+      p.subtitle {
+        max-width: 520px; margin: 0 auto;
+        font-size: 18px; line-height: 1.45;
+        color: var(--text-muted);
+      }
+      .eyebrow {
+        text-transform: uppercase; letter-spacing: 0.12em; font-size: 12px;
+        color: var(--text-faint); font-weight: 600;
+      }
+
+      /* Buttons */
+      .btn {
+        appearance: none; border: 0; cursor: pointer;
+        font: inherit; font-weight: 700; letter-spacing: -0.01em;
+        padding: 18px 32px; border-radius: var(--r-button);
+        transition: transform 80ms ease, background 120ms ease, color 120ms ease;
+      }
+      .btn:active { transform: translateY(1px); }
+      .btn-primary {
+        background: var(--accent); color: #082A00;
+        font-size: 18px; min-width: 280px;
+      }
+      .btn-primary:hover { background: #6CD814; }
+      .btn-primary:disabled {
+        background: var(--accent-disabled); color: rgba(8, 42, 0, 0.5);
+        cursor: not-allowed;
+      }
+      .btn-ghost {
+        background: transparent; color: var(--text-muted);
+        font-size: 15px; padding: 12px 16px;
+      }
+      .btn-ghost:hover { color: var(--text); }
+
+      /* Setup form */
+      .setup-form {
+        width: 100%; max-width: 460px;
+        display: flex; flex-direction: column; gap: 18px;
+        text-align: left;
+      }
+      .field { display: flex; flex-direction: column; gap: 8px; }
+      .field label {
+        font-size: 13px; font-weight: 600; color: var(--text-muted);
+        letter-spacing: 0.01em;
+      }
+      .field input[type="text"] {
+        appearance: none;
+        background: var(--surface); border: 1px solid var(--hairline);
+        border-radius: var(--r-input); padding: 16px 18px;
+        color: var(--text); font: inherit; font-size: 17px;
+        outline: none; transition: border-color 120ms, background 120ms;
+      }
+      .field input[type="text"]:focus {
+        border-color: var(--hairline-strong);
+        background: var(--surface-strong);
+      }
+      .age-grid {
+        display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px;
+      }
+      .age-pill {
+        appearance: none; cursor: pointer; font: inherit; font-weight: 700;
+        background: var(--surface); border: 1px solid var(--hairline);
+        color: var(--text); border-radius: 14px; padding: 14px 0;
+        transition: border-color 120ms, background 120ms;
+      }
+      .age-pill:hover { background: var(--surface-strong); }
+      .age-pill[aria-pressed="true"] {
+        background: rgba(88,204,2,0.12);
+        border-color: var(--accent); color: var(--text);
+      }
+
+      /* Theme cards */
+      .theme-grid {
+        width: 100%;
+        display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      }
+      @media (max-width: 760px) {
+        .theme-grid { grid-template-columns: 1fr; }
+      }
+      .theme-card {
+        appearance: none; cursor: pointer; font: inherit;
+        text-align: left; color: var(--text);
+        border-radius: var(--r-card); padding: 20px;
+        background: var(--surface); border: 1.5px solid var(--hairline);
+        display: flex; flex-direction: column; gap: 18px;
+        min-height: 240px;
+        transition: border-color 140ms, transform 140ms, background 140ms;
+      }
+      .theme-card:hover { transform: translateY(-2px); border-color: var(--hairline-strong); }
+      .theme-card[aria-pressed="true"] {
+        border-color: var(--accent);
+        background: rgba(88,204,2,0.06);
+      }
+      .theme-card .glyph {
+        width: 100%; height: 96px; border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+      }
+      .theme-card[data-theme="ocean"] .glyph { background: var(--ocean); }
+      .theme-card[data-theme="forest"] .glyph { background: var(--forest); }
+      .theme-card[data-theme="atmosphere"] .glyph { background: var(--atmosphere); }
+      .theme-card .name { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+      .theme-card .blurb { font-size: 14px; color: var(--text-muted); line-height: 1.4; }
+
+      /* Generating screen */
+      .checklist {
+        width: 100%; max-width: 520px;
+        display: flex; flex-direction: column; gap: 14px;
+        text-align: left;
+      }
+      .check {
+        display: grid; grid-template-columns: 28px 1fr; gap: 14px;
+        align-items: flex-start;
+        padding: 14px 16px;
+        background: var(--surface); border: 1px solid var(--hairline);
+        border-radius: 14px;
+        opacity: 0.55;
+        transition: opacity 320ms;
+      }
+      .check.is-active, .check.is-done { opacity: 1; }
+      .check .ring {
+        width: 24px; height: 24px; border-radius: 50%;
+        border: 2px solid var(--hairline-strong);
+        margin-top: 1px;
+        position: relative;
+      }
+      .check.is-active .ring {
+        border-color: var(--accent);
+        animation: pulse 1.4s ease-in-out infinite;
+      }
+      .check.is-done .ring {
+        background: var(--accent); border-color: var(--accent);
+      }
+      .check.is-done .ring::after {
+        content: ""; position: absolute; left: 6px; top: 2px;
+        width: 6px; height: 12px;
+        border-right: 2.5px solid #082A00; border-bottom: 2.5px solid #082A00;
+        transform: rotate(45deg);
+      }
+      .check .label { font-size: 16px; font-weight: 600; }
+      .check .sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+      @keyframes pulse {
+        0%,100% { transform: scale(1);   opacity: 1; }
+        50%     { transform: scale(1.12); opacity: 0.75; }
+      }
+      .progress-rail {
+        width: 100%; max-width: 520px; height: 4px;
+        background: var(--surface); border-radius: 999px; overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%; width: 0; background: var(--accent);
+        transition: width 600ms ease;
+      }
+
+      /* Story view */
+      .story-card {
+        width: 100%;
+        text-align: left;
+        background: var(--surface);
+        border: 1px solid var(--hairline);
+        border-radius: var(--r-card);
+        padding: 36px 40px;
+      }
+      .story-card .story-title {
+        font-size: 30px; line-height: 1.1; letter-spacing: -0.015em;
+        font-weight: 700; margin: 0 0 6px;
+      }
+      .story-card .story-meta {
+        font-size: 14px; color: var(--text-muted); margin-bottom: 24px;
+      }
+      .story-body {
+        font-family: "New York", ui-serif, Georgia, Cambria,
+          "Times New Roman", Times, serif;
+        font-size: 18px; line-height: 1.65; color: var(--text);
+      }
+      .story-body p {
+        margin: 0 0 18px;
+      }
+      .story-body p:last-child { margin-bottom: 0; }
+      .badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(88,204,2,0.14);
+        color: #BFF18A;
+        font-size: 12px; font-weight: 700; letter-spacing: 0.02em;
+        padding: 4px 10px; border-radius: 999px;
+        text-transform: uppercase;
+      }
+
+      /* Feedback bar */
+      .feedback-bar {
+        width: 100%;
+        margin-top: 22px;
+        padding: 18px 20px;
+        background: var(--surface); border: 1px solid var(--hairline);
+        border-radius: var(--r-card);
+        display: flex; flex-direction: column; gap: 14px;
+      }
+      .feedback-bar .row {
+        display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      }
+      .feedback-bar .prompt {
+        font-size: 15px; font-weight: 600; color: var(--text);
+      }
+      .chip {
+        appearance: none; cursor: pointer; font: inherit;
+        font-size: 14px; font-weight: 600;
+        background: var(--surface-strong); border: 1px solid var(--hairline);
+        color: var(--text);
+        padding: 10px 16px; border-radius: 999px;
+        transition: background 120ms, border-color 120ms;
+      }
+      .chip:hover {
+        background: rgba(255,255,255,0.16); border-color: var(--hairline-strong);
+      }
+      .chip.is-perfect { color: var(--accent); border-color: rgba(88,204,2,0.4); }
+      .chip:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      /* Status / error notice */
+      .notice {
+        margin-top: 18px;
+        padding: 14px 18px;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--hairline);
+        border-radius: 14px;
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+      .notice.is-error { color: #FFB4B4; border-color: rgba(255,180,180,0.3); background: rgba(255,180,180,0.06); }
+    </style>
+  </head>
+  <body>
+    <div class="stars" aria-hidden="true"></div>
+    <div class="hills" aria-hidden="true"></div>
+
+    <main class="app">
+      <div class="brand">
+        <span class="dot"></span> Good Night, Earth
+      </div>
+
+      <!-- 1. Welcome -->
+      <section class="step" data-step="welcome">
+        <svg class="mascot" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-label="Sleeping Earth">
+          <circle cx="120" cy="120" r="92" fill="#3B7DD8" />
+          <path d="M48 116 q14 -28 36 -16 q22 6 28 28 q-14 22 -36 18 q-18 -8 -28 -30 z" fill="#5DBE4D" />
+          <path d="M148 78 q22 6 32 26 q-4 26 -24 32 q-22 -8 -28 -30 q4 -22 20 -28 z" fill="#5DBE4D" />
+          <path d="M88 174 q26 -6 48 4 q-12 16 -34 12 q-16 -4 -14 -16 z" fill="#5DBE4D" />
+          <path d="M92 116 q6 -10 18 0" stroke="#0E2752" stroke-width="3.5" fill="none" stroke-linecap="round" />
+          <path d="M134 116 q6 -10 18 0" stroke="#0E2752" stroke-width="3.5" fill="none" stroke-linecap="round" />
+          <path d="M104 144 q16 12 32 0" stroke="#0E2752" stroke-width="3.5" fill="none" stroke-linecap="round" />
+          <g transform="translate(184 70)">
+            <path d="M0 14 a14 14 0 1 0 14 -14 a10 10 0 0 1 -14 14 z" fill="#F5D277" />
+            <circle cx="6" cy="9" r="1.2" fill="#0E2752" />
+          </g>
+        </svg>
+        <div>
+          <h1 class="display">Good Night, Earth</h1>
+          <p class="subtitle" style="margin-top:18px;">
+            Gentle bedtime stories that inspire children to care for the planet.
+          </p>
+        </div>
+        <button class="btn btn-primary" data-action="next-from-welcome">Begin tonight's story</button>
+      </section>
+
+      <!-- 2. Setup (name + age) -->
+      <section class="step" data-step="setup" hidden>
+        <span class="eyebrow">Step 1 of 2</span>
+        <h2 class="title">Who is the story for tonight?</h2>
+        <form class="setup-form" id="setup-form" novalidate>
+          <div class="field">
+            <label for="name-input">First name</label>
+            <input id="name-input" type="text" autocomplete="off" placeholder="e.g. Linda" maxlength="40" />
+          </div>
+          <div class="field">
+            <label>Age</label>
+            <div class="age-grid" id="age-grid">
+              <button type="button" class="age-pill" data-age="5">5</button>
+              <button type="button" class="age-pill" data-age="6">6</button>
+              <button type="button" class="age-pill" data-age="7">7</button>
+              <button type="button" class="age-pill" data-age="8">8</button>
+              <button type="button" class="age-pill" data-age="9">9</button>
+              <button type="button" class="age-pill" data-age="10">10</button>
+            </div>
+          </div>
+        </form>
+        <button class="btn btn-primary" data-action="next-from-setup" disabled>Choose a place</button>
+      </section>
+
+      <!-- 3. Theme picker -->
+      <section class="step" data-step="theme" hidden>
+        <span class="eyebrow">Step 2 of 2</span>
+        <h2 class="title">Pick a place for tonight</h2>
+        <div class="theme-grid" id="theme-grid">
+          <button type="button" class="theme-card" data-theme="ocean">
+            <div class="glyph">
+              <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M14 38 q4 -10 14 -10 q12 0 16 14 q-3 4 -10 4 q-4 0 -7 -4 q-3 -2 -7 0 q-4 2 -6 -4 z" fill="#fff" opacity="0.95"/>
+                <circle cx="22" cy="34" r="1.5" fill="#0E2752"/>
+                <path d="M40 22 q-2 -4 0 -6 q3 0 4 4" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <div class="name">Ocean</div>
+              <div class="blurb">A story about plastic in the sea.</div>
+            </div>
+          </button>
+          <button type="button" class="theme-card" data-theme="forest">
+            <div class="glyph">
+              <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M14 50 l8 -22 l8 22 z" fill="#1F4A23"/>
+                <path d="M30 50 l10 -28 l10 28 z" fill="#1F4A23"/>
+                <ellipse cx="46" cy="46" rx="6" ry="4" fill="#E07A2F"/>
+                <circle cx="48" cy="44" r="1.2" fill="#0E2752"/>
+              </svg>
+            </div>
+            <div>
+              <div class="name">Forest</div>
+              <div class="blurb">A story about trash in the woods.</div>
+            </div>
+          </button>
+          <button type="button" class="theme-card" data-theme="atmosphere">
+            <div class="glyph">
+              <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
+                <path d="M30 14 a16 16 0 1 0 16 16 a12 12 0 0 1 -16 -16 z" fill="#F5D277"/>
+                <circle cx="50" cy="20" r="1.4" fill="#fff"/>
+                <circle cx="46" cy="34" r="1.2" fill="#fff"/>
+                <circle cx="54" cy="40" r="1.6" fill="#fff"/>
+              </svg>
+            </div>
+            <div>
+              <div class="name">Atmosphere</div>
+              <div class="blurb">A story about lights that hide the stars.</div>
+            </div>
+          </button>
+        </div>
+        <div style="display:flex; gap:12px;">
+          <button class="btn btn-ghost" data-action="back-to-setup">Back</button>
+          <button class="btn btn-primary" data-action="generate" disabled>Tell me the story</button>
+        </div>
+      </section>
+
+      <!-- 4. Generating -->
+      <section class="step" data-step="generating" hidden>
+        <svg class="mascot" viewBox="0 0 240 240" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="120" cy="120" r="92" fill="#3B7DD8" />
+          <path d="M48 116 q14 -28 36 -16 q22 6 28 28 q-14 22 -36 18 q-18 -8 -28 -30 z" fill="#5DBE4D" />
+          <path d="M148 78 q22 6 32 26 q-4 26 -24 32 q-22 -8 -28 -30 q4 -22 20 -28 z" fill="#5DBE4D" />
+          <path d="M92 116 q6 -10 18 0" stroke="#0E2752" stroke-width="3.5" fill="none" stroke-linecap="round" />
+          <path d="M134 116 q6 -10 18 0" stroke="#0E2752" stroke-width="3.5" fill="none" stroke-linecap="round" />
+          <path d="M104 144 q16 12 32 0" stroke="#0E2752" stroke-width="3.5" fill="none" stroke-linecap="round" />
+          <text x="180" y="50" fill="#fff" opacity="0.9" font-size="22" font-weight="700">z</text>
+          <text x="195" y="38" fill="#fff" opacity="0.75" font-size="18" font-weight="700">z</text>
+          <text x="206" y="28" fill="#fff" opacity="0.6"  font-size="14" font-weight="700">z</text>
+        </svg>
+        <h2 class="title" id="generating-title">Crafting your story</h2>
+        <div class="checklist" id="checklist">
+          <div class="check" data-check="plan">
+            <div class="ring"></div>
+            <div>
+              <div class="label">Planning the story</div>
+              <div class="sub">Shaping the idea, theme, and message</div>
+            </div>
+          </div>
+          <div class="check" data-check="draft">
+            <div class="ring"></div>
+            <div>
+              <div class="label">Writing the first draft</div>
+              <div class="sub">Building scenes, characters, and flow</div>
+            </div>
+          </div>
+          <div class="check" data-check="panel">
+            <div class="ring"></div>
+            <div>
+              <div class="label">Six guardians are reading it</div>
+              <div class="sub">Continuity, vocabulary, tone, creativity, education</div>
+            </div>
+          </div>
+          <div class="check" data-check="review">
+            <div class="ring"></div>
+            <div>
+              <div class="label">Final review</div>
+              <div class="sub">Polishing for sweet dreams</div>
+            </div>
+          </div>
+        </div>
+        <div class="progress-rail"><div class="progress-fill" id="progress-fill"></div></div>
+      </section>
+
+      <!-- 5. Story -->
+      <section class="step" data-step="story" hidden>
+        <article class="story-card" id="story-card">
+          <span class="badge" id="revised-badge" hidden>Revised</span>
+          <h2 class="story-title" id="story-title">Tonight's story</h2>
+          <div class="story-meta" id="story-meta"></div>
+          <div class="story-body" id="story-body"></div>
+        </article>
+        <div class="feedback-bar" id="feedback-bar">
+          <div class="prompt">How was tonight's story?</div>
+          <div class="row" id="chips-row"></div>
+          <div class="notice" id="feedback-notice" hidden></div>
+        </div>
+        <div style="margin-top:24px; display:flex; gap:12px;">
+          <button class="btn btn-ghost" data-action="restart">Tell another story</button>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // --- Tiny state machine ----------------------------------------------
+      const state = {
+        name: "",
+        age: null,
+        environment: null,
+        plan_outline: "",
+        plan_spine: "",
+        story: "",
+      };
+
+      const $ = (sel) => document.querySelector(sel);
+      const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+      function show(stepName) {
+        $$(".step").forEach((s) => s.toggleAttribute("hidden", s.dataset.step !== stepName));
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // --- Welcome ----------------------------------------------------------
+      $("[data-action='next-from-welcome']").addEventListener("click", () => show("setup"));
+
+      // --- Setup form ------------------------------------------------------
+      const nameInput = $("#name-input");
+      const ageGrid = $("#age-grid");
+      const setupNext = $("[data-action='next-from-setup']");
+
+      function syncSetupNext() {
+        const ok = nameInput.value.trim().length > 0 && state.age !== null;
+        setupNext.disabled = !ok;
+      }
+      nameInput.addEventListener("input", () => {
+        state.name = nameInput.value.trim();
+        syncSetupNext();
+      });
+      ageGrid.addEventListener("click", (e) => {
+        const btn = e.target.closest(".age-pill");
+        if (!btn) return;
+        $$(".age-pill").forEach((p) => p.setAttribute("aria-pressed", "false"));
+        btn.setAttribute("aria-pressed", "true");
+        state.age = Number(btn.dataset.age);
+        syncSetupNext();
+      });
+      setupNext.addEventListener("click", () => show("theme"));
+
+      // --- Theme picker -----------------------------------------------------
+      const themeGrid = $("#theme-grid");
+      const generateBtn = $("[data-action='generate']");
+
+      themeGrid.addEventListener("click", (e) => {
+        const card = e.target.closest(".theme-card");
+        if (!card) return;
+        $$(".theme-card").forEach((c) => c.setAttribute("aria-pressed", "false"));
+        card.setAttribute("aria-pressed", "true");
+        state.environment = card.dataset.theme;
+        generateBtn.disabled = false;
+      });
+
+      $("[data-action='back-to-setup']").addEventListener("click", () => show("setup"));
+
+      // --- Generating screen ------------------------------------------------
+      const checks = ["plan", "draft", "panel", "review"];
+
+      function resetChecklist() {
+        checks.forEach((k) => {
+          const el = $(`.check[data-check="${k}"]`);
+          el.classList.remove("is-active", "is-done");
+        });
+        $("#progress-fill").style.width = "0%";
+      }
+
+      // Visual-only stepped progress while the API call is in flight.
+      // Each step ticks roughly every 4s, matching the typical pipeline
+      // pace; the API returning is what actually advances to the story
+      // view, so this animation is "best effort" pacing, not a real
+      // progress signal.
+      function startChecklistAnimation() {
+        resetChecklist();
+        let i = 0;
+        const tick = () => {
+          if (i > 0) $(`.check[data-check="${checks[i - 1]}"]`).classList.add("is-done");
+          if (i < checks.length) {
+            const el = $(`.check[data-check="${checks[i]}"]`);
+            el.classList.add("is-active");
+            $("#progress-fill").style.width = `${((i + 0.5) / checks.length) * 100}%`;
+            i += 1;
+            return setTimeout(tick, 4500);
+          }
+          $("#progress-fill").style.width = "100%";
+          return null;
+        };
+        return tick();
+      }
+
+      // --- Generate story ---------------------------------------------------
+      generateBtn.addEventListener("click", async () => {
+        $("#generating-title").textContent = `Crafting ${state.name}'s ${state.environment} story`;
+        show("generating");
+        startChecklistAnimation();
+        try {
+          const res = await fetch("/api/story", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: state.name,
+              age: state.age,
+              environment: state.environment,
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: "Something went wrong." }));
+            throw new Error(err.detail || "Something went wrong.");
+          }
+          const data = await res.json();
+          state.story = data.story;
+          state.plan_outline = data.plan_outline;
+          state.plan_spine = data.plan_spine;
+          renderStory({ revised: false });
+          show("story");
+        } catch (e) {
+          show("theme");
+          alert(`Couldn't tell that story tonight: ${e.message}`);
+        }
+      });
+
+      // --- Story view -------------------------------------------------------
+      const PRETTY_THEME = { ocean: "Ocean", forest: "Forest", atmosphere: "Atmosphere" };
+
+      function renderStory({ revised }) {
+        $("#revised-badge").toggleAttribute("hidden", !revised);
+        $("#story-title").textContent =
+          `${state.name}'s ${PRETTY_THEME[state.environment] || ""} story`.trim();
+        $("#story-meta").textContent = `For ${state.name}, age ${state.age}`;
+        const body = $("#story-body");
+        body.innerHTML = "";
+        state.story.split(/\n\s*\n/).forEach((para) => {
+          if (!para.trim()) return;
+          const p = document.createElement("p");
+          p.textContent = para.trim();
+          body.appendChild(p);
+        });
+        $("#feedback-notice").setAttribute("hidden", "");
+      }
+
+      // --- Feedback chips ---------------------------------------------------
+      const chipsRow = $("#chips-row");
+      const noticeEl = $("#feedback-notice");
+
+      async function loadPresets() {
+        const res = await fetch("/api/presets");
+        const { presets } = await res.json();
+        chipsRow.innerHTML = "";
+        presets.forEach(({ key, label }) => {
+          const b = document.createElement("button");
+          b.className = "chip";
+          b.textContent = label;
+          b.addEventListener("click", () => submitFeedback(key));
+          chipsRow.appendChild(b);
+        });
+        const perfect = document.createElement("button");
+        perfect.className = "chip is-perfect";
+        perfect.textContent = "It's perfect";
+        perfect.addEventListener("click", () => {
+          chipsRow.parentElement.style.display = "none";
+        });
+        chipsRow.appendChild(perfect);
+      }
+      loadPresets();
+
+      async function submitFeedback(presetKey) {
+        $$(".chip").forEach((c) => (c.disabled = true));
+        noticeEl.textContent = "Reworking the story…";
+        noticeEl.classList.remove("is-error");
+        noticeEl.removeAttribute("hidden");
+        try {
+          const res = await fetch("/api/feedback", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              name: state.name,
+              age: state.age,
+              environment: state.environment,
+              plan_outline: state.plan_outline,
+              plan_spine: state.plan_spine,
+              story: state.story,
+              preset: presetKey,
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ detail: "Something went wrong." }));
+            throw new Error(err.detail || "Something went wrong.");
+          }
+          const data = await res.json();
+          if (data.accepted) {
+            state.story = data.story;
+            renderStory({ revised: true });
+            chipsRow.parentElement.style.display = "none";
+          } else {
+            noticeEl.textContent =
+              "Kept the original story above. The requested change didn't meet the safety / quality bar.";
+            $$(".chip").forEach((c) => (c.disabled = false));
+          }
+        } catch (e) {
+          noticeEl.textContent = `Something went wrong: ${e.message}`;
+          noticeEl.classList.add("is-error");
+          $$(".chip").forEach((c) => (c.disabled = false));
+        }
+      }
+
+      // --- Restart ----------------------------------------------------------
+      $("[data-action='restart']").addEventListener("click", () => {
+        nameInput.value = "";
+        state.name = "";
+        state.age = null;
+        state.environment = null;
+        state.story = "";
+        state.plan_outline = "";
+        state.plan_spine = "";
+        $$(".age-pill").forEach((p) => p.setAttribute("aria-pressed", "false"));
+        $$(".theme-card").forEach((c) => c.setAttribute("aria-pressed", "false"));
+        setupNext.disabled = true;
+        generateBtn.disabled = true;
+        chipsRow.parentElement.style.display = "";
+        $$(".chip").forEach((c) => (c.disabled = false));
+        show("welcome");
+      });
+    </script>
+  </body>
+</html>

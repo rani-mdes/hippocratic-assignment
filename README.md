@@ -55,6 +55,14 @@ You decide
 
 *Gentle bedtime stories that inspire children to care for the planet.*
 
+<p align="center">
+  <img src="assets/good-night-earth-01-welcome.png" alt="Welcome screen mockup" width="32%" />
+  <img src="assets/good-night-earth-02-theme.png" alt="Theme picker mockup" width="32%" />
+  <img src="assets/good-night-earth-03-generating.png" alt="Generating screen mockup" width="32%" />
+</p>
+
+<p align="center"><sub>Design references: welcome, theme picker, and generating screens. The desktop UI in <a href="static/index.html">static/index.html</a> uses the same visual system (deep night-sky palette, SF Pro Rounded type, single Duolingo-green accent, recurring sleeping-Earth mascot).</sub></p>
+
 A multi-agent pipeline. The user's structured request first goes to a
 **story planner** that picks one of two narrative outlines
 (`mistake_and_amends` or `witness_and_explain`) and drafts a 3-5 sentence
@@ -70,37 +78,47 @@ temperatures differ.
 
 ### Block diagram
 
+Edges are labeled with what flows between components - the structured
+input that fills each agent's user-template, or the structured output it
+returns. Every solid arrow is part of the main pipeline; the dashed
+arrow is the optional one-shot user feedback loop.
+
 ```mermaid
-flowchart LR
-    User([User]) -->|"name, age,<br/>environment"| CLI[main.py CLI]
-    CLI --> Pipeline[run_pipeline]
-    Pipeline -->|"request"| Planner[Story planner<br/>temp 0.5]
-    Planner -->|"outline + spine"| Storyteller[Storyteller<br/>temp 0.8]
-    Storyteller -->|"draft"| Length{check_length<br/>== 6 paragraphs?}
-    Length -->|"wrong count<br/>(deterministic feedback)"| Storyteller
-    Length -->|"ok"| FanOut{{"parallel fan-out"}}
-    FanOut --> Continuity[Continuity]
-    FanOut --> AgeApp[AgeAppropriateness]
-    FanOut --> Vocab[Vocab<br/>age-tuned]
-    FanOut --> Emotion[Emotion]
-    FanOut --> Creativity[Creativity]
-    FanOut --> Education[Education]
-    Continuity --> Combine[Orchestrator combines]
-    AgeApp --> Combine
-    Vocab --> Combine
-    Emotion --> Combine
-    Creativity --> Combine
-    Education --> Combine
-    Combine -->|"story plus 6 analyses"| Judge[Judge<br/>temp 0.0]
-    Judge -->|"pass=false plus<br/>synthesized feedback"| Storyteller
-    Judge -->|"pass=true or<br/>max revisions"| CLI
-    CLI -->|"final story"| User
+flowchart TD
+    User([User<br/>name • age • theme])
+
+    User -->|"structured request"| Planner["Planner agent<br/>(LLM, temp 0.5)"]
+    Planner -->|"outline_id +<br/>3-5 sentence spine"| Storyteller["Storyteller agent<br/>(LLM, temp 0.8)"]
+    Storyteller -->|"draft (6 paragraphs)"| Length{{"check_length<br/>(deterministic gate)"}}
+
+    Length -- "wrong paragraph count<br/>→ synthetic feedback" --> Storyteller
+    Length -- "passes" --> Panel
+
+    subgraph Panel["Support panel — 6 reviewers run in parallel (LLM, temp 0.0)"]
+        direction LR
+        R1[Continuity]
+        R2[Age-appropriate]
+        R3[Vocab<br/>age-tuned]
+        R4[Emotion]
+        R5[Creativity]
+        R6[Education]
+    end
+
+    Panel -->|"6 JSON analyses:<br/>score + concrete edits"| Judge["Judge agent<br/>(LLM, temp 0.0)"]
+    Judge -- "fail → synthesized<br/>revision feedback" --> Storyteller
+    Judge -- "pass OR max_revisions" --> User
+
+    User -. "optional feedback chip<br/>(one-shot, re-runs<br/>storyteller + panel + judge)" .-> Storyteller
 ```
 
 The outer flow is strictly sequential and easy to trace. Parallelism only
-appears at the support fan-out, implemented as one
+appears at the support panel, implemented as one
 `ThreadPoolExecutor.map(...)` call. The bounded `for` loop in
-`run_pipeline` always terminates.
+`run_pipeline` always terminates: the judge either passes the draft, or
+`max_revisions` is reached and the last draft is delivered with the
+judge's reasoning attached. The dashed user-feedback arrow runs at most
+once per session and goes through the same panel + judge bar before
+replacing the original.
 
 ### Pass criterion
 
@@ -116,8 +134,10 @@ in code so a lenient verdict can't slip through.
 | File | Purpose |
 |------|---------|
 | [main.py](main.py) | Thin CLI: argparse, env validation, logging configuration, assignment reflection |
-| [story_engine.py](story_engine.py) | Dataclasses, `plan_story`, `generate_story`, `run_support_agents` (parallel), `judge_story`, `run_pipeline`, JSON parsing |
-| [prompts.py](prompts.py) | Planner, storyteller, parametrized support-agent template, and judge prompts; `OUTLINE_TYPES`, `ENVIRONMENT_FACTS`, `ENVIRONMENT_CONCERNS` data |
+| [story_engine.py](story_engine.py) | Dataclasses, `plan_story`, `generate_story`, `run_support_agents` (parallel), `judge_story`, `run_pipeline`, `apply_user_feedback`, JSON parsing |
+| [prompts.py](prompts.py) | Planner, storyteller, parametrized support-agent template, judge prompts, `USER_FEEDBACK_PRESETS`; `OUTLINE_TYPES`, `ENVIRONMENT_FACTS`, `ENVIRONMENT_CONCERNS` data |
+| [webapp.py](webapp.py) | FastAPI server: thin JSON wrapper around the pipeline + static mount for the desktop UI |
+| [static/index.html](static/index.html) | Single-page desktop UI: welcome, listener setup, theme picker, generating animation, story view, feedback chips |
 | [client.py](client.py) | Single `chat()` wrapper around `openai.ChatCompletion.create`; one-time `.env` load |
 | [config.py](config.py) | Model id, temperatures, token budgets, revision cap, pass threshold |
 
@@ -164,6 +184,33 @@ The story is printed to stdout. With `--verbose`, the panel's per-aspect
 scores, the judge's verdict, and any synthesized feedback for the next
 revision are streamed to stderr so you can see how the loop converged.
 
+### Run the desktop UI
+
+A small FastAPI server in [webapp.py](webapp.py) wraps the same pipeline
+and serves a single-page desktop UI from [static/index.html](static/index.html).
+The UI walks through welcome -> listener setup -> theme picker -> a
+calming generating animation -> the rendered story, with a row of
+feedback chips at the bottom (Make it gentler / More magical / Shorter /
+Different ending / It's perfect). Picking a chip triggers one
+storyteller revision plus a full panel + judge re-run; if the revised
+version passes the same bar as the main loop it replaces the original,
+otherwise the original stays and a soft notice explains why.
+
+```bash
+source venv/bin/activate
+pip install -r requirements.txt   # adds fastapi + uvicorn
+uvicorn webapp:app --reload
+```
+
+Then open <http://127.0.0.1:8000> in a desktop browser.
+
+The visual design pulls from two sources: Apple's discipline (SF Pro
+Rounded, generous whitespace, deep night-sky palette, restrained accent
+color) and Duolingo's warmth (a recurring sleeping-Earth mascot, a
+single bright Duolingo green for primary actions, big friendly cards for
+the theme picker). See the inline mockups at the top of this section
+for design references.
+
 ### Cost note
 
 Per request, the pipeline issues 1 planner + 1 storyteller + 6 support +
@@ -174,5 +221,7 @@ runs before the panel, so drafts with the wrong paragraph count revise
 from a code-generated feedback string and skip the panel + judge
 entirely - a length-failed revision costs **1 call** instead of 8. At
 default `--max-revisions 2` the absolute worst case is 25 calls; in
-practice it lands lower. All on `gpt-3.5-turbo`, so a few cents and a
-few seconds at most, but worth knowing if you batch-run it.
+practice it lands lower. If the user picks a desktop-UI feedback chip,
+that adds another 1 storyteller + 6 support + 1 judge = 8 calls (single
+shot), only if they opt in. All on `gpt-3.5-turbo`, so a few cents and
+a few seconds at most, but worth knowing if you batch-run it.

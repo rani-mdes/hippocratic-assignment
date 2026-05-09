@@ -5,14 +5,18 @@
 # Before submitting the assignment, describe here in a few sentences what you
 # would have built next if you spent 2 more hours on this project:
 #
-# With more time I would (1) expand the curated environment list and let
-# parents add their own theme with a custom facts pack from a YAML file,
-# (2) add an interactive feedback turn so a parent can say things like
-# "shorter please" or "more sea otters" and have that woven in alongside
-# the panel's automated critique, and (3) build a tiny eval harness: a
-# fixed set of canned (name, age, environment) requests run through the
-# pipeline whenever prompts change, tracking pass-rate and per-aspect
-# average scores so we can ship prompt changes with confidence.
+
+
+
+# (1) With more time I would create a user input option to ask for a specific story length from the start.
+# (2) I would also make sure to include a more robust user feedback mechanism,
+# where users can type out what they would want to change.
+# (3) I would add more specific review agents to support the judge and main storytelling
+# agent, for example an agent to check for sentence cadence.
+# (4) Build a more robust "feedback" system from the judge, with
+# more specifications around the feedback scoring, and more chances
+# for the user to input their feedback into the judging criteria.
+
 
 from __future__ import annotations
 

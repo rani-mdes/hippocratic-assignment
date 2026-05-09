@@ -29,7 +29,9 @@ ONE CENTRAL CONFLICT (strict):
   decided but not yet acted), and takes the kind action that
   resolves it in paragraph 5. Paragraphs 4 and 5 together carry the
   climax: P4 is the slow, hushed approach, P5 is the act and warm
-  payoff.
+  payoff. If the kind action appears anywhere before paragraph 5 -
+  whether named, summarized, or implied - the pacing is wrong and
+  the story has failed its arc.
 - The action is small, specific, and child-scaled: something a 5-to-
   10-year-old could imagine doing themselves (picking up one wrapper,
   watering one plant, drawing one curtain, kindly explaining one
@@ -84,10 +86,10 @@ PARAGRAPH STRUCTURE:
 
 2. Setup and gentle goal.
    Establish where the character goes - a place inside the chosen
-   theme that brings them closer to where the small trouble lives.
-   Optionally introduce one friendly supporting character (a small
-   animal, a kind neighbor, a quiet helper). Stakes stay small and
-   comforting.
+   theme where the small trouble stays gently in view, but is not yet
+   approached or resolved. Optionally introduce one friendly
+   supporting character (a small animal, a kind neighbor, a quiet
+   helper). Stakes stay small and comforting.
 
 3. Gentle adventure deepens.
    Build imagination and wonder in a magical but calming setting drawn
@@ -291,10 +293,19 @@ theme. Your job is to:
    the one that fits this listener and theme best (younger listeners
    often suit mistake_and_amends; older listeners can carry
    witness_and_explain).
-2. Draft a 3 to 5 sentence story spine describing what specifically
-   happens: who the main character is, where they are, the small
-   environmental moment, the kind action they take, and how the
-   story settles for sleep.
+2. Draft a 3 to 5 sentence story spine. The storyteller will unfold
+   this spine across SIX paragraphs, with the kind action landing in
+   paragraph 5 - never earlier. Pace the spine accordingly:
+     - Sentence 1: who the main character is and where they are.
+     - Sentence 2: the small environmental moment they notice
+       (no fix yet).
+     - Sentence 3 (optional): how they live with it / draw closer.
+     - Sentence 4: the kind action they take. This is the climax -
+       keep it for late in the spine.
+     - Sentence 5: how the story settles for sleep.
+   Do NOT collapse the noticing and the kind action into the same
+   sentence. The spine is paced so the storyteller has room to
+   breathe across all six paragraphs.
 
 The spine is a roadmap, not the story itself. Keep it concrete,
 gentle, and specific to the environmental theme. The spine must be
@@ -436,7 +447,10 @@ SUPPORT_ASPECTS: dict[str, dict[str, str]] = {
             "drift toward sleep. Flag over-stimulating climaxes, jarring "
             "shifts, anxious endings, or any moment that would rev a "
             "child back up. The final paragraph must leave the listener "
-            "in a peaceful, reassuring state."
+            "in a peaceful, reassuring state. Flag any climax or "
+            "kind-action resolution that lands before paragraph 5 - that "
+            "breaks the gradually-decreasing-energy arc that helps the "
+            "listener wind down."
         ),
         "output_expectations": (
             "Each issue must quote a sentence or paragraph whose tone is "
@@ -579,3 +593,53 @@ their aspect):
 
 {support_block}
 """
+
+
+# --- User feedback presets (post-pipeline, single shot) ---------------------
+
+# Each preset has a user-facing label (shown in the CLI/web menu) and an
+# LLM-facing feedback string (passed straight into generate_story as the
+# revision feedback). Keeping both in one dict means the menu and the LLM
+# instruction can never drift out of sync.
+#
+# Adding a preset: append one entry. The CLI menu and the dispatch logic
+# both iterate the dict in insertion order, so order = display order.
+USER_FEEDBACK_PRESETS: dict[str, dict[str, str]] = {
+    "gentler": {
+        "label": "Make it gentler and more soothing",
+        "feedback": (
+            "Soften the overall tone. Slow the pacing, replace any "
+            "energetic verbs with calmer ones, and make the imagery feel "
+            "warmer and quieter. Keep the same characters, conflict, and "
+            "kind action."
+        ),
+    },
+    "more_magical": {
+        "label": "Make it more magical and imaginative",
+        "feedback": (
+            "Add one or two fresh, vivid magical details (sensory imagery: "
+            "soft glows, gentle sparkles, friendly creatures noticing the "
+            "main character). Keep it bedtime-safe - no scary or "
+            "overstimulating magic. Same characters, conflict, and kind "
+            "action."
+        ),
+    },
+    "shorter": {
+        "label": "Make it shorter",
+        "feedback": (
+            "Tighten the story. Aim for the lower end of the 300-400 word "
+            "range. Drop the least essential sentences but preserve the "
+            "six-paragraph structure, the central conflict, the kind "
+            "action, and the named moral."
+        ),
+    },
+    "different_ending": {
+        "label": "Give it a different ending",
+        "feedback": (
+            "Rewrite the final two paragraphs with a different but still "
+            "calm, sleepy ending that resolves the same central conflict. "
+            "The protagonist still takes a kind action and the moral is "
+            "still named warmly. Keep paragraphs 1-4 unchanged."
+        ),
+    },
+}

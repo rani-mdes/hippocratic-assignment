@@ -111,6 +111,16 @@ class StoryResult:
     plan: StoryPlan
 
 
+@dataclass
+class UserRevisionOutcome:
+    """Result of one post-pipeline user-feedback revision attempt."""
+
+    accepted: bool                   # True if the revised story passed re-validation
+    story: str                       # Revised story (only meaningful when accepted)
+    verdict: JudgeVerdict            # Judge verdict on the revised story
+    supports: list[SupportAnalysis]  # Panel analyses on the revised story
+
+
 # --- Planner ----------------------------------------------------------------
 
 
@@ -413,6 +423,44 @@ def run_pipeline(
         story = generate_story(request, plan, previous_draft=story, feedback=feedback)
 
     raise RuntimeError("unreachable: bounded for-loop always returns")
+
+
+# --- Post-pipeline user feedback (single shot) ------------------------------
+
+
+def apply_user_feedback(
+    request: StoryRequest,
+    plan: StoryPlan,
+    story: str,
+    feedback: str,
+) -> UserRevisionOutcome:
+    """Run one storyteller revision driven by user feedback, then re-validate.
+
+    The user has already received a judge-approved story; this is an
+    explicit override they requested. We run the same panel + judge as
+    the main loop so the safety / quality bar is unchanged. If the
+    revised story passes, we surface it as the accepted result. If it
+    fails (low score or any safety concern), we report `accepted=False`
+    and the caller keeps the original story.
+
+    Single shot by design: no length gate, no retry loop. The user gets
+    exactly one attempt so the interaction stays predictable and short.
+    """
+    revised = generate_story(request, plan, previous_draft=story, feedback=feedback)
+    supports = run_support_agents(revised, request.age)
+    verdict = judge_story(revised, supports)
+    logger.info(
+        "[user_feedback] %s | judge=%d | %s",
+        "PASS" if verdict.passed else "REVERT",
+        verdict.overall_score,
+        ", ".join(f"{s.name}={s.score}" for s in supports),
+    )
+    return UserRevisionOutcome(
+        accepted=verdict.passed,
+        story=revised,
+        verdict=verdict,
+        supports=supports,
+    )
 
 
 # --- Formatting helpers -----------------------------------------------------
